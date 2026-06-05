@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guess 愛豆小時候</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+      background: #eee4ff;
+      color: #2d2350;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 28px 16px;
+    }
+
+    .game {
+      width: min(92vw, 760px);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(28px, 5vw, 44px);
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 18px 45px rgba(80, 58, 135, 0.16);
+    }
+
+    .photo-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .idol-photo {
+      width: min(100%, 560px);
+      max-height: 520px;
+      object-fit: contain;
+      border-radius: 22px;
+      display: block;
+      background: white;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    .question {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 16px 0;
+    }
+
+    .options {
+      width: min(100%, 420px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .option {
+      cursor: pointer;
+      padding: 12px 10px;
+      border-radius: 16px;
+      border: 3px solid transparent;
+      background: #ffffff;
+      font-size: 17px;
+      font-weight: 700;
+      color: #2d2350;
+      transition: 0.2s;
+    }
+
+    .option:hover {
+      transform: translateY(-2px);
+    }
+
+    .option.selected {
+      background: #ffe3c7;
+    }
+
+    .option.correct {
+      border-color: #25b45b;
+    }
+
+    .option.wrong {
+      border-color: #e64b4b;
+    }
+
+    .message {
+      min-height: 30px;
+      margin-top: 16px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .next-btn {
+      display: none;
+      margin: 14px auto 0;
+      border: none;
+      border-radius: 999px;
+      padding: 11px 24px;
+      background: #7d65d8;
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .next-btn.show {
+      display: inline-block;
+    }
+
+    @media (max-width: 520px) {
+      .card {
+        padding: 18px;
+      }
+
+      .options {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="game">
+    <h1>Guess 愛豆小時候</h1>
+
+    <section class="card">
+      <div class="photo-wrap">
+        <img id="photo" class="idol-photo" alt="愛豆小時候照片" />
+      </div>
+
+      <div class="question">這是誰小時候？</div>
+
+      <div id="options" class="options"></div>
+
+      <div id="message" class="message"></div>
+
+      <button id="nextBtn" class="next-btn">下一題</button>
+    </section>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        image: "申惟.jpg",
+        answer: "申惟"
+      },
+      {
+        image: "休寧凱.jpg",
+        answer: "休寧凱"
+      },
+      {
+        image: "李涵.PNG",
+        answer: "李涵"
+      },
+      {
+        image: "明宰鉉.JPG",
+        answer: "明宰鉉"
+      },
+      {
+        image: "金主訓.jpg",
+        answer: "金主訓"
+      },
+      {
+        image: "金泰亨.jpg",
+        answer: "金泰亨"
+      },
+      {
+        image: "姜太顯.jpg",
+        answer: "姜太顯"
+      },
+      {
+        image: "柾國.jpg",
+        answer: "柾國"
+      },
+      {
+        image: "崔然竣.jpg",
+        answer: "崔然竣"
+      },
+      {
+        image: "張員瑛.jpg",
+        answer: "張員瑛"
+      },
+      {
+        image: "許允真.JPG",
+        answer: "許允真"
+      },
+      {
+        image: "雪允.PNG",
+        answer: "雪允"
+      },
+      {
+        image: "寧寧.jpg",
+        answer: "寧寧"
+      },
+      {
+        image: "鄭雅賢.jpg",
+        answer: "鄭雅賢"
+      },
+      {
+        image: "Ella.jpg",
+        answer: "Ella"
+      },
+      {
+        image: "Jiwoo.PNG",
+        answer: "Jiwoo"
+      },
+      {
+        image: "Lily.PNG",
+        answer: "Lily"
+      },
+      {
+        image: "Rosie.PNG",
+        answer: "Rosie"
+      },
+      {
+        image: "Winter.JPG",
+        answer: "Winter"
+      }
+    ];
+
+    let currentIndex = 0;
+    let answered = false;
+    let score = 0;
+
+    const photo = document.getElementById("photo");
+    const optionsBox = document.getElementById("options");
+    const message = document.getElementById("message");
+    const nextBtn = document.getElementById("nextBtn");
+
+    function shuffle(array) {
+      const copied = [...array];
+
+      for (let i = copied.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copied[i], copied[j]] = [copied[j], copied[i]];
+      }
+
+      return copied;
+    }
+
+    function getRandomOptions(correctAnswer) {
+      const allNames = questions.map(question => question.answer);
+      const wrongNames = allNames.filter(name => name !== correctAnswer);
+      const selectedWrongNames = shuffle(wrongNames).slice(0, 3);
+
+      return shuffle([correctAnswer, ...selectedWrongNames]);
+    }
+
+    function loadQuestion() {
+      answered = false;
+      message.textContent = "";
+      nextBtn.classList.remove("show");
+
+      const question = questions[currentIndex];
+
+      photo.src = question.image;
+      optionsBox.innerHTML = "";
+
+      const optionNames = getRandomOptions(question.answer);
+
+      optionNames.forEach(name => {
+        const button = document.createElement("button");
+        button.className = "option";
+        button.textContent = name;
+
+        button.addEventListener("click", () => {
+          chooseAnswer(button, name, question.answer);
+        });
+
+        optionsBox.appendChild(button);
+      });
+    }
+
+    function chooseAnswer(clickedButton, selectedName, correctAnswer) {
+      if (answered) return;
+
+      answered = true;
+
+      const buttons = document.querySelectorAll(".option");
+
+      buttons.forEach(button => {
+        if (button.textContent === correctAnswer) {
+          button.classList.add("correct");
+        } else {
+          button.classList.add("wrong");
+        }
+      });
+
+      clickedButton.classList.add("selected");
+
+      if (selectedName === correctAnswer) {
+        score++;
+        message.textContent = "答對了！";
+      } else {
+        message.textContent = `答錯了，正確答案是：${correctAnswer}`;
+      }
+
+      nextBtn.classList.add("show");
+    }
+
+    nextBtn.addEventListener("click", () => {
+      currentIndex++;
+
+      if (currentIndex >= questions.length) {
+        message.textContent = `遊戲結束！你的分數是 ${score} / ${questions.length}`;
+        nextBtn.textContent = "重新開始";
+        currentIndex = 0;
+        score = 0;
+        questions.sort(() => Math.random() - 0.5);
+      }
+
+      loadQuestion();
+    });
+
+    questions.sort(() => Math.random() - 0.5);
+    loadQuestion();
+  </script>
+</body>
+</html>
